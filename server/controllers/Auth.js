@@ -86,6 +86,8 @@ exports.signup = async (req, res) => {
       about: null,
       contactNumber: null,
     })
+
+
     const user = await User.create({
       firstName,
       lastName,
@@ -107,7 +109,7 @@ exports.signup = async (req, res) => {
     console.error(error)
     return res.status(500).json({
       success: false,
-      message: "User cannot be registered. Please try again.",
+      message: "User cannot be registered. Please try again. " + error,
     })
   }
 }
@@ -143,7 +145,7 @@ exports.login = async (req, res) => {
     if (await bcrypt.compare(password, user.password)) {
       const token = jwt.sign(
         { email: user.email, id: user._id, role: user.role },
-        process.env.JWT_SECRET,
+        process.env.JWT_SECRET_KEY,
         {
           expiresIn: "24h",
         }
@@ -202,15 +204,18 @@ exports.sendotp = async (req, res) => {
       lowerCaseAlphabets: false,
       specialChars: false,
     })
-    const result = await OTP.findOne({ otp: otp })
+    // const result = await OTP.findOne({ otp: otp })
     console.log("Result is Generate OTP Func")
-    console.log("OTP", otp)
-    console.log("Result", result)
-    while (result) {
-      otp = otpGenerator.generate(6, {
-        upperCaseAlphabets: false,
-      })
-    }
+    // console.log("OTP", otp)
+    // console.log("Result", result)
+    // while (result) {
+      // otp = otpGenerator.generate(6, {
+      //   upperCaseAlphabets: false,
+      // })
+    // }
+
+    console.log(otp);
+
     const otpPayload = { email, otp }
     const otpBody = await OTP.create(otpPayload)
     console.log("OTP Body", otpBody)
