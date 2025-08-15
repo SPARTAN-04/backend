@@ -8,7 +8,7 @@ const { passwordUpdated } = require("../mail/templates/passwordUpdate")
 const Profile = require("../models/Profile")
 require("dotenv").config()
 
-// Signup Controller for Registering USers
+// Signup Controller for Registering Users
 
 exports.signup = async (req, res) => {
   try {
@@ -76,8 +76,7 @@ exports.signup = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10)
 
     // Create the user
-    let approved = ""
-    approved === "Instructor" ? (approved = false) : (approved = true)
+    let approved = accountType === "Instructor" ? false : true
 
     // Create the Additional Profile For User
     const profileDetails = await Profile.create({
@@ -143,14 +142,14 @@ exports.login = async (req, res) => {
 
     // Generate JWT token and Compare Password
     if (await bcrypt.compare(password, user.password)) {
+      
       const token = jwt.sign(
-        { email: user.email, id: user._id, role: user.role },
+        { email: user.email, id: user._id, accountType: user.accountType },
         process.env.JWT_SECRET_KEY,
         {
           expiresIn: "24h",
         }
       )
-
       // Save token to user document in database
       user.token = token
       user.password = undefined
@@ -224,7 +223,6 @@ exports.sendotp = async (req, res) => {
     res.status(200).json({
       success: true,
       message: `OTP Sent Successfully`,
-      otp,
     })
   } catch (error) {
     console.log(error.message)
