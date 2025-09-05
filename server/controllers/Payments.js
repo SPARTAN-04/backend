@@ -32,7 +32,7 @@ exports.capturePayment = async (req, res) => {
       }
 
       // safer ObjectId check
-      if (course.studentsEnroled.some(id => id.toString() === userId)) {
+      if (course.studentsEnrolled.some(id => id.toString() === userId)) {
         return res.status(400).json({
           success: false,
           message: "Student is already enrolled in one of the courses",
