@@ -144,12 +144,15 @@ exports.sendPaymentSuccessEmail = async (req, res) => {
 
 // enroll the student in the courses
 const enrollStudents = async (courses, userId) => {
+  
   for (const courseId of courses) {
     const enrolledCourse = await Course.findOneAndUpdate(
       { _id: courseId },
       { $push: { studentsEnrolled: userId } },
       { new: true }
+      
     )
+      console.log("Student Enrolled");
 
     if (!enrolledCourse) {
       throw new Error(`Course not found: ${courseId}`)
@@ -184,4 +187,5 @@ const enrollStudents = async (courses, userId) => {
       )
     )
   }
+
 }
