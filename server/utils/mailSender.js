@@ -17,9 +17,9 @@ const mailSender = async (email, title, body) => {
     console.log(email);
         console.log(title);
         console.log(body);
-                        console.log(env.USER_EMAIL);
-                console.log(env.USER_PASS);
-                console.log(env.MAIL_HOST);
+                        console.log(process.env.USER_EMAIL);
+                console.log(process.env.USER_PASS);
+                console.log(process.env.MAIL_HOST);
             
 
 
