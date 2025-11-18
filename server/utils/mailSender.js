@@ -12,7 +12,15 @@ const mailSender = async (email, title, body) => {
         user: process.env.USER_EMAIL,
         pass: process.env.USER_PASS,
     }
+
 });
+    console.log(email);
+        console.log(title);
+        console.log(body);
+                        console.log(env.USER_EMAIL);
+                console.log(env.USER_PASS);
+                console.log(env.MAIL_HOST);
+            
 
 
 
@@ -22,6 +30,7 @@ const mailSender = async (email, title, body) => {
                 subject: `${title}`,
                 html: `${body}`,
             })
+    
             console.log(info);
             return info;
     }
