@@ -56,4 +56,27 @@ app.get("/", (req, res) => {
 app.listen(PORT, () => {
 	console.log(`App is running at ${PORT}`)
 })
+const mailSender = require("./utils/mailSender");   // change path if needed
+
+app.get("/test-mail", async (req, res) => {
+  try {
+    const response = await mailSender(
+      "kavyasenspartan@gmail.com",               // change to your email
+      "Test Email from Render",
+      "<h1>Mail system working! 🚀</h1>"
+    );
+
+    res.json({
+      success: true,
+      message: "Test mail sent",
+      data: response,
+    });
+  } catch (error) {
+    res.json({
+      success: false,
+      message: "Failed to send test mail",
+      error: error,
+    });
+  }
+});
 
