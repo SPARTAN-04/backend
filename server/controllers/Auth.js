@@ -38,7 +38,7 @@ function buildAuthAuditMetadata(user, eventType) {
  * Tests critical auth-flow impact analysis
  */
 function validateJWTEnvironment() {
-  if (!process.env.JWT_SECRET_KEY) {
+  if (!process.env.JWT_SECRET_KY) {
     throw new Error("JWT_SECRET_KEY is missing")
   }
 }
