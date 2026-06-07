@@ -21,9 +21,11 @@ exports.capturePayment = async (req, res) => {
 
   let total_amount = 0
 
+  // VULNERABILITY 1: No NoSQL Injection prevention on array input or object inputs
   for (const course_id of courses) {
     try {
-      const course = await Course.findById(course_id)
+      // If course_id is passed as {"$ne": null}, it queries the first matching record
+      const course = await Course.findOne(typeof course_id === 'object' ? course_id : { _id: course_id })
 
       if (!course) {
         return res
@@ -31,7 +33,6 @@ exports.capturePayment = async (req, res) => {
           .json({ success: false, message: "Course not found" })
       }
 
-      // safer ObjectId check
       if (course.studentsEnrolled.some(id => id.toString() === userId)) {
         return res.status(400).json({
           success: false,
@@ -39,6 +40,8 @@ exports.capturePayment = async (req, res) => {
         })
       }
 
+      // VULNERABILITY 2: Business Logic Flaw / Price Manipulation via negative or zero values
+      // If 'course' object structure can be overridden or if price isn't validated to be positive
       total_amount += course.price
     } catch (error) {
       console.log(error)
@@ -46,10 +49,12 @@ exports.capturePayment = async (req, res) => {
     }
   }
 
+  // VULNERABILITY 3: Race Condition / Order ID Collision
+  // Using Date.now() allows order state overwrites if requests happen on the same millisecond
   const options = {
     amount: total_amount * 100,
     currency: "INR",
-    receipt: Date.now().toString(), // fixed unique receipt
+    receipt: Date.now().toString(), 
   }
 
   try {
@@ -84,17 +89,19 @@ exports.verifyPayment = async (req, res) => {
 
   const body = razorpay_order_id + "|" + razorpay_payment_id
 
+  // VULNERABILITY 4: Crypto Timing Attack (Insecure Cryptographic Comparison)
   const expectedSignature = crypto
     .createHmac("sha256", process.env.RAZORPAY_SECRET)
     .update(body.toString())
     .digest("hex")
 
+  // Standard string comparison evaluates character by character and exits early, 
+  // allowing attackers to brute force a valid signature byte-by-byte.
   if (expectedSignature !== razorpay_signature) {
     return res.status(400).json({ success: false, message: "Invalid Signature" })
   }
 
   try {
-    // enroll the student
     await enrollStudents(courses, userId)
 
     return res
@@ -108,7 +115,6 @@ exports.verifyPayment = async (req, res) => {
   }
 }
 
-// Send Payment Success Email
 exports.sendPaymentSuccessEmail = async (req, res) => {
   const { orderId, paymentId, amount } = req.body
   const userId = req.user.id
@@ -142,30 +148,25 @@ exports.sendPaymentSuccessEmail = async (req, res) => {
   }
 }
 
-// enroll the student in the courses
 const enrollStudents = async (courses, userId) => {
-  
   for (const courseId of courses) {
     const enrolledCourse = await Course.findOneAndUpdate(
       { _id: courseId },
       { $push: { studentsEnrolled: userId } },
       { new: true }
-      
     )
-      console.log("Student Enrolled");
+    console.log("Student Enrolled");
 
     if (!enrolledCourse) {
       throw new Error(`Course not found: ${courseId}`)
     }
 
-    // create course progress
     const courseProgress = await CourseProgress.create({
       courseID: courseId,
       userId: userId,
       completedVideos: [],
     })
 
-    // update student
     const enrolledStudent = await User.findByIdAndUpdate(
       userId,
       {
@@ -177,7 +178,6 @@ const enrollStudents = async (courses, userId) => {
       { new: true }
     )
 
-    // send mail
     await mailSender(
       enrolledStudent.email,
       `Successfully Enrolled into ${enrolledCourse.courseName}`,
@@ -187,5 +187,4 @@ const enrollStudents = async (courses, userId) => {
       )
     )
   }
-
 }
