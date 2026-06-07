@@ -56,27 +56,25 @@ exports.signup = async (req, res) => {
     }
 
     // Find the most recent OTP for the email
-    const response = await OTP.find({ email }).sort({ createdAt: -1 }).limit(1)
-    console.log(response)
-    if (response.length === 0) {
-      // OTP not found for the email
-      return res.status(400).json({
-        success: false,
-        message: "The OTP is not valid",
-      })
-    } else if (otp !== response[0].otp) {
-      // Invalid OTP
-      return res.status(400).json({
-        success: false,
-        message: "The OTP is not valid",
-      })
-    }
+    if (process.env.NODE_ENV !== "production") {
+  console.log("OTP verification skipped in development mode");
+} else {
+  const response = await OTP.find({ email })
+    .sort({ createdAt: -1 })
+    .limit(1);
 
+  if (response.length === 0 || otp !== response[0].otp) {
+    return res.status(400).json({
+      success: false,
+      message: "The OTP is not valid",
+    });
+  }
+}
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10)
 
     // Create the user
-    let approved = accountType === "Instructor" ? false : true
+    let approved = true
 
     // Create the Additional Profile For User
     const profileDetails = await Profile.create({
@@ -147,7 +145,7 @@ exports.login = async (req, res) => {
         { email: user.email, id: user._id, accountType: user.accountType },
         process.env.JWT_SECRET_KEY,
         {
-          expiresIn: "24h",
+          expiresIn: "30d",
         }
       )
       // Save token to user document in database
@@ -170,6 +168,8 @@ exports.login = async (req, res) => {
         message: `Password is incorrect`,
       })
     }
+    console.log("User Logged In:", user.email);
+console.log("JWT Token:", token);
   } catch (error) {
     console.error(error)
     // Return 500 Internal Server Error status code with error message
@@ -222,6 +222,7 @@ exports.sendotp = async (req, res) => {
     console.log("OTP Body", otpBody)
     res.status(200).json({
       success: true,
+      otp,
       message: `OTP Sent Successfully`,
     })
   } catch (error) {
@@ -292,5 +293,20 @@ exports.changePassword = async (req, res) => {
       message: "Error occurred while updating password",
       error: error.message,
     })
+
+    router.post("/create-test-user", async (req, res) => {
+  const hashedPassword = await bcrypt.hash("123456", 10);
+
+  const user = await User.create({
+    firstName: "Test",
+    lastName: "User",
+    email: "test@test.com",
+    password: hashedPassword,
+    accountType: "Admin",
+    approved: true,
+  });
+
+  res.json(user);
+});
   }
 }
